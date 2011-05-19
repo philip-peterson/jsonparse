@@ -4,11 +4,9 @@ JSONParse.js
 A JSON Parser for the Unity Game Engine
  
 Based on json_parse by Douglas Crockford
-Ported by Philip Peterson (ironmagma/ppeterson) for the Starry Expanse Project
+Ported by Philip Peterson (ironmagma/ppeterson)
 
-Last updated 3/5/11
-
- */
+*/
 
 
 
