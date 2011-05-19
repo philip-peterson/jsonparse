@@ -9,7 +9,8 @@ It's a library for parsing JSON, using UnityScript (the programming language use
 Why?
 ----
 
-Because JSON is the fat-free XML.
+Because JSON is the fat-free XML, and because UnityScript is not JavaScript (even though 
+everybody says it is.).
 
 Who?
 ----
