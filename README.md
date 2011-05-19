@@ -27,6 +27,6 @@ var parsed = JSONParse.JSONParse(dataString);
 
 
 print("The person's name is " + parsed["name"] + ", and he is " + parsed["age"].ToString() + 
-       ". \n\n His hobbies?" + String.Join(", ", parsed["hobbies"]) + "." );
+       ". \n\n His hobbies: " + String.Join(", ", parsed["hobbies"]) + "." );
 
 ```
