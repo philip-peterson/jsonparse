@@ -14,7 +14,7 @@ Because JSON is the fat-free XML.
 Who?
 ----
 
-[http://ironmagma.com/](Philip Peterson).
+[Philip Peterson](http://ironmagma.com/).
 
 
 Demo
