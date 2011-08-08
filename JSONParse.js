@@ -261,7 +261,7 @@ public static function JSONParse (source, reviver) {
     
     if(reviver) {
         var walk : Function;
-        walk = function(holder, key) {
+        walk = function(holder : Hashtable, key) {
             var k;
             var v;
             var value = holder[key];
@@ -269,13 +269,13 @@ public static function JSONParse (source, reviver) {
                 for(k in value) {
                     v = walk(value, k);
                     if(v != null) {
-                        value[k] = v;
+                        (value as Hashtable)[k] = v;
                     } else {
-                        value.Remove(k);
+                        (value as Hashtable).Remove(k);
                     }
                 }
             }
-            return reviver(holder, key, value);
+            return (reviver as Function)(holder, key, value);
         };
         return walk({"": result}, "");
     } else {
