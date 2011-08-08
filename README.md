@@ -24,7 +24,7 @@ Demo
 
 var dataString = "{\"name\": \"Bob\", \"age\": 22, \"hobbies\": [\"biking\", \"fishing\", \"swimming\"]}";
 
-var parsed = JSONParse.JSONParse(dataString);
+var parsed = (JSONParse.JSONParse(dataString) as Hashtable);
 
 
 print("The person's name is " + parsed["name"] + ", and he is " + parsed["age"].ToString() + 
