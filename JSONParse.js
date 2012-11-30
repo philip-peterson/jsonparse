@@ -258,29 +258,9 @@ public static function JSONParse (source, reviver) {
     if (ch) {
         error("Syntax error");
     }
+
+    return result;
     
-    if(reviver) {
-        var walk : Function;
-        walk = function(holder, key) {
-            var k;
-            var v;
-            var value = holder[key];
-            if(value && (typeof value == Boo.Lang.Hash || System.Type.GetType(value).IsArray)) {
-                for(k in value) {
-                    v = walk(value, k);
-                    if(v != null) {
-                        value[k] = v;
-                    } else {
-                        value.Remove(k);
-                    }
-                }
-            }
-            return reviver(holder, key, value);
-        };
-        return walk({"": result}, "");
-    } else {
-        return result;
-    }
 }
 
 public static function JSONParse (source) {
