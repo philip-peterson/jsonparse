@@ -1,268 +1,300 @@
-/*
+#pragma strict
 
-JSONParse.js
-A JSON Parser for the Unity Game Engine
- 
-Based on json_parse by Douglas Crockford
-Ported by Philip Peterson (ironmagma/ppeterson)
+import System.Collections.Generic;
+import System;
 
-*/
+class JSONParse {
 
+   var source : String;
+   var ctr : int;
+   
+   
+   function JSONParse(source : String) {
+      this.source = source;
+      this.ctr = 0;
+   }
 
-
-private static var at : int;
-
-private static var ch : String;
-
-private static var escapee = {
-            "\"": "\"",
-            "\\": "\\",
-            "/": "/",
-            "b": "b",
-            "f": "\f",
-            "n": "\n",
-            "r": "\r",
-            "t": "\t"
-            };
-            
-private static var text : String;
-
-private static function error (m) : void {
-    throw new System.Exception("SyntaxError: \nMessage: "+m+
-                        "\nAt: "+at+
-                        "\nText: "+text);
-}
-
-private static function next (c) : System.String {
-
-    if(c && c != ch) {
-        error("Expected '" + c + "' instead of '" + ch + "'");
-    }
-    
-    
-    if(text.length >= at+1) {
-        ch = text.Substring(at, 1);
-    }
-    else {
-        ch = "";
-    }
-    
-    at++;
-    return ch;
-    
-}
-
-private static function next () {
-    return next(null);
-}
-
-private static function number () : Number {
-    var number;
-    var string = "";
-    
-    if(ch == "-") {
-        string = "-";
-        next("-");
-    }
-    while(ch in ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]) {
-        string += ch;
-        next();
-    }
-    if(ch == ".") {
-        string += ".";
-        while(next() && ch in ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]) {
-            string += ch;
-        }
-    }
-    if(ch == "e" || ch == "E") {
-        string += ch;
-        next();
-        if(ch == "-" || ch == "+") {
-            string += ch;
-            next();
-        }
-        while(ch in ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]) {
-            string += ch;
-            next();
-        }
-    }
-    number = Number.Parse(string);
-    
-    if (System.Double.IsNaN(number)) {
-        error("Bad number");
-    } else {
-        return number;
-    }
-    
-}
-
-
-private static function string () : System.String {
-    var hex : int;
-    var i : int;
-    var string : String = "";
-    var uffff : int;
-    
-    if(ch == "\"") {
-        while(next()) {
-            if(ch == "\"") {
-                next();
-                return string;
-            } else if (ch == "\\") {
-                next();
-                if(ch == "u") {
-                    uffff = 0;
-                    for(i = 0; i < 4; i++) {
-                        hex = System.Convert.ToInt32(next(), 16);
-                        if (hex == Mathf.Infinity || hex == Mathf.NegativeInfinity) {
-                            break;
-                        }
-                        uffff = uffff * 16 + hex;
-                    }
-                    var m : char = uffff;
-                    string += m;
-                } else if(ch in escapee) {
-                    string += escapee[ch];
-                } else {
-                    break;
-                }
-            } else {
-                string += ch;
+   function Parse() {
+      skip();
+      var result : Object = handleGeneric();
+      skip();
+      expectEof();
+      return result;
+   }
+   
+   function handleGeneric() : Object {
+      if (source[ctr] == '[') {
+         return handleArray();
+      }
+      if (source[ctr] == '{') {
+         return handleObject();
+      }
+      if (source[ctr] == 'n') {
+         return handleNull();
+      }
+      if (source[ctr] == 'f') {
+         return handleFalse();
+      }
+      if (source[ctr] == 't') {
+         return handleTrue();
+      }
+      if (source[ctr] == '"') {
+         return handleString();
+      }
+      
+      return handleNumber();
+      
+   }
+   
+   function handleArray() : Array {
+      var v : Array = [];
+      if (!consume('['  [0])) {
+         throw new Exception("Expected array");
+      }
+      while (true) {
+         skip();
+         if (consume(']'  [0])) {
+            return v;
+         }
+         else {
+            v.Push(handleGeneric());
+            skip();
+            if (!consume(','  [0])) {
+               if (consume(']'  [0])) {
+                  return v;
+               }
+               else {
+                  throw new Exception("Expected a ',' or ']' after array element");
+               }
             }
-        }
-    }
-    error("Bad string");
-};
-
-
-
-private static function white () : void {
-    while(ch && (ch.length >= 1 && ch.Chars[0] <= 32)) { // if it's whitespace
-        next();
-    }   
-}
-
-private static function value () : System.Object {
-    white();
-    // Again, we have to pass on the switch() statement.
-    
-    if(ch == "{") {
-        return object();
-    } else if(ch == "[") {
-        return array();
-    } else if(ch == "\"") {
-        return string();
-    } else if(ch == "-") {
-        return number();
-    } else {
-        return (ch in ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]) ? number() : word();
-    }
-    
-};
-
-private static function word () {
-    // We don't use a switch() statement because
-    // otherwise Unity will complain about
-    // unreachable code (in reality it's not unreachable).
-    
-    if(ch == "t") {
-        next("t");
-        next("r");
-        next("u");
-        next("e");
-        return true;
-    } else if (ch == "f") {
-        next("f");
-        next("a");
-        next("l");
-        next("s");
-        next("e");
-        return false;
-    } else if (ch == "n") {
-        next("n");
-        next("u");
-        next("l");
-        next("l");
-        return null;
-    } else if (ch == "") { 
-        return null; // Todo: why is it doing this?
-    }
-    
-    error("Unexpected '" + ch + "'");
-}
-
-private static function array () {
-    
-    var array : Array = new Array();
-    
-    if(ch == "[") {
-        next("[");
-        white();
-        if(ch == "]") {
-            next("]");
-            return array; // empty array
-        }
-        while(ch) {
-            array.Push(value());
-            white();
-            if(ch == "]") {
-                next("]");
-                return array;
+         }
+      }
+      
+      return null; // to satisfy compiler
+   }
+   
+   function handleObject() : Dictionary.<String, Object> {
+      var dict = new Dictionary.<String, Object>();
+      if (!consume('{'  [0])) {
+         throw new Exception("Expected object");
+      }
+      while (true) {
+         skip();
+         if (consume('}'  [0])) {
+            return dict;
+         }
+         else {
+            var key = handleString();
+            skip();
+            if (!consume(':'  [0])) {
+               throw new Exception("Expected ':' separating object key and value");
             }
-            next(",");
-            white();
-        }
-    }
-    error("Bad array");
-};
-
-private static function object () {
-    
-    var key;
-    var object = {};
-    
-    if(ch == "{") {
-        next("{");
-        white();
-        if(ch == "}") {
-            next("}");
-            return object; // empty object
-        }
-        while(ch) {
-            key = string();
-            white();
-            next(":");
-            object[key] = value();
-            white();
-            if (ch == "}") {
-                next("}");
-                return object;
+            skip();
+            var val = handleGeneric();
+            dict[handleString()] = val;
+            skip();
+            if (!consume(','  [0])) {
+               if (consume('}'  [0])) {
+                  return dict;
+               }
+               else {
+                  throw new Exception("Expected a ',' or '}' after object key-value pair");
+               }
             }
-            next(",");
-            white();
-        }
-    }
-    error("Bad object");
-}
+         }
+      }
+      
+      return null; // to satisfy compiler
+   }
+   
+   function handleString() {
+      return "foo";
+   }
+   
+   function handleTrue() : boolean {
+      if (!consumeString("true")) {
+         throw new Exception("Expected 'true'");
+      }
+      return true;
+   }
 
-
-
-public static function JSONParse (source, reviver) {
-    var result;
-    
-    text = source;
-    at = 0;
-    ch = " ";
-    result = value();
-    white();
-    if (ch) {
-        error("Syntax error");
-    }
-
-    return result;
-    
-}
-
-public static function JSONParse (source) {
-    return JSONParse(source, null);
+   function handleFalse() : boolean {
+      if (!consumeString("false")) {
+         throw new Exception("Expected 'false'");
+      }
+      return false;
+   }
+      
+   function handleNull() : Object {
+      if (!consumeString("null")) {
+         throw new Exception("Expected 'null'");
+      }
+      return null;
+   }
+   
+   function handleNumber() {
+      var negative = false;
+      var octal = false;
+      
+      var number : Array = [];
+      var exponent : Array = [];
+      var mantissa : Array = [];
+      
+      var exponentNegative = false;
+      
+      var next : String;
+      
+      if (consume('-'  [0])) {
+         negative = true;
+      }
+      if (!consume('0'  [0])) {
+         next = peek();
+         if (next.length == 0) {
+            throw new Exception("Encountered EOF while scanning number");
+         }
+         
+         if (isDigit1thru9(next[0])) {
+            number.Push(intFromChar(next[0]));
+            ctr++;
+         }
+      
+         next = peek();
+         while(next.length && isDigit(next[0])) {
+            number.Push(intFromChar(next[0]));
+            ctr++;
+            next = peek();
+         }
+      }
+      
+      next = peek();
+      if (next.Equals('.')) {
+         consume('.'  [0]);
+         next = peek();
+         if (!isDigit(next)) {
+            throw new Exception("Expected digit after decimal point");
+         }
+         do {
+            mantissa.Push(intFromChar(next[0]));
+            ctr++;
+            next = peek();
+         } while (isDigit(next));
+      }
+      
+      next = peek();
+      if (next.Equals('e') || next.Equals('E')) {
+         consume(next[0]);
+         if (consume('-'  [0])) {
+            exponentNegative = true;
+         }
+         else {
+            consume('+'  [0]);
+         }
+         
+         next = peek();
+         if (!isDigit(next)) {
+            throw new Exception("Expected digit after exponent marker");
+         }
+         do {
+            exponent.Push(intFromChar(next[0]));
+            ctr++;
+            next = peek();
+         } while (isDigit(next));
+      }
+      
+      var returnVal : double = 0;
+      var i : int;
+      for (i = 0; i < number.length; i++) {
+         returnVal = returnVal * 10 + (number[i] cast int);
+      }
+      
+      for (i = 0; i < mantissa.length; i++) {
+         returnVal += (mantissa[i] cast int)*(Mathf.Pow(10, -(i+1)));
+      }
+      
+      var tenPower : int = 0;
+      
+      for (i = 0; i < exponent.length; i++) {
+         tenPower = tenPower * 10 + (exponent[i] cast int);
+      }
+      
+      returnVal = returnVal * Mathf.Pow(10, tenPower);
+      
+      // TODO exponent
+      return returnVal;
+   }
+   
+   function intFromChar(c : char) : int {
+      return ((c cast int) - ('0'[0] cast int));
+   }
+   
+   function isDigit1thru9(c : char) {
+      return c >= '1'[0] && c <= '9'[0];
+   }
+   
+   function isDigit(c : char) {
+      return c >= '0'[0] && c <= '9'[0];
+   }
+   
+   function isDigit(s : String) {
+      return s.length > 0 && isDigit(s[0]);
+   }
+   
+   function peek() : String {
+      if (ctr == source.length) {
+         return "";
+      }
+      return source[ctr].ToString();
+   }
+   
+   function expectEof() {
+      if (ctr == source.length) {
+         return true;
+      }
+      else {
+         throw new Exception("Trailing characters detected (expected EOF)");
+      }
+   }
+   
+   function consumeString(s : String) {
+      if (ctr + s.length >= source.length) {
+         throw new Exception(String.Format("Unexpected EOF when expecting '{}'", s));
+      }
+      for (var i = 0; i < s.length; i++) {
+         if (s[i] != source[ctr+i]) {
+            return false;
+         }
+      }
+      return true;
+   }
+   
+   function consume(c : char) : boolean {
+      if (ctr == source.length) {
+         throw new Exception("Unexpected EOF");
+      }
+      else {
+         if (source[ctr] == c) {
+            ctr++;
+            return true;
+         }
+         else {
+            return false;
+         }
+      }
+   }
+   
+   // Skips whitespace
+   function skip() {
+      while (
+         ctr < source.length
+         && (
+            source[ctr] == 0x20
+            || source[ctr] == 0x09
+            || source[ctr] == 0x0A
+            || source[ctr] == 0x0D
+         )
+      ) {
+         ctr++;
+      }
+   }
+   
 }
